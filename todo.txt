@@ -1,7 +1,0 @@
-- [1.] Watch for the code examples
-- [2.] Implement face mesh
-- [3.] Apply only opencv and yolo?
-
-
-
-
