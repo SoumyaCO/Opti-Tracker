@@ -1,36 +1,37 @@
-import cv2
-from kivy.clock import Clock
-from kivy.graphics.texture import Texture
-from kivy.uix.image import Image
+from kivy.lang import Builder
+from kivymd.uix.menu import MDDropdownMenu
+
 from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
 
-class CamScreen(MDScreen):
-    def __init__(self, **kwargs):
-        super(CamScreen, self).__init__(**kwargs)
-        self.img1 = Image()
-        self.add_widget(self.img1)
-        self.capture = cv2.VideoCapture(0)
-        Clock.schedule_interval(self.update, 1.0/33.0)
+KV = '''
+MDScreen
+    md_bg_color: self.theme_cls.backgroundColor
 
-    def update(self, dt):
-        ret, frame = self.capture.read()
-        if ret:
-            # convert it to texture
-            buf1 = cv2.flip(frame, 0)
-            buf = buf1.tostring()
-            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-            image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-            # display image from the texture
-            self.img1.texture = image_texture
+    MDDropDownItem:
+        pos_hint: {"center_x": .5, "center_y": .5}
+        on_release: app.open_menu(self)
 
-    def on_leave(self, *args):
-        # close the camera properly
-        self.capture.release()
+        MDDropDownItemText:
+            id: drop_text
+            text: "Item"
+'''
 
-class MainApp(MDApp):
-    def build(self):     
-        self.theme_cls.primary_palette = "Green"   
-        return CamScreen()
 
-MainApp().run()
+class Example(MDApp):
+    def open_menu(self, item):
+        menu_items = [
+            {
+                "text": f"{i}",
+                "on_release": lambda x=f"Item {i}": self.menu_callback(x),
+            } for i in range(5)
+        ]
+        MDDropdownMenu(caller=item, items=menu_items).open()
+
+    def menu_callback(self, text_item):
+        self.root.ids.drop_text.text = text_item
+
+    def build(self):
+        return Builder.load_string(KV)
+
+
+Example().run()

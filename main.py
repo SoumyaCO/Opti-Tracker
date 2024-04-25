@@ -1,10 +1,12 @@
 from kivy.lang import Builder
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.menu import MDDropdownMenu
 import cv2
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
+from kivy.uix.spinner import Spinner
 
 KV = '''
 ScreenManager:
@@ -79,8 +81,16 @@ ScreenManager:
                 source: 'optitrackers.png'
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: 0.5, 0.5
-
-           
+        
+            MDDropDownItem:
+                pos_hint: {'center_x': 0.3, 'center_y': 0.5}
+                padding: "-10dp"
+                id: dropdown_item
+                text: 'Select Camera'
+                on_release: app.open_menu(self)
+                MDDropDownItemText:
+                    id: drop_text
+                    text: "Cam"
             MDButton:
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 # padding: [0, 50, 0, 0] 
@@ -103,6 +113,8 @@ ScreenManager:
             spacing: '120dp'
             padding: "30dp"
             pos_hint: {'center_x': 0.8, 'center_y': 0.5}
+            
+                
             MDButton:
                 style: "elevated"
                
@@ -115,6 +127,7 @@ ScreenManager:
                 on_release: root.stop_camera()
                 MDButtonText:
                     text: "Stop"
+                
 '''
 
 class LogoScreen(MDScreen):
@@ -128,7 +141,14 @@ class CamScreen(MDScreen):
         super(CamScreen, self).__init__(**kwargs)
         self.capture = cv2.VideoCapture(0)
 
+    def select_camera(self, value):
+        if self.capture:
+            self.capture.release()
+        self.capture = cv2.VideoCapture(int(value))
+
     def start_camera(self, *args):
+        if not self.capture:
+            return
         self.img1 = self.ids['cam_image']
         Clock.schedule_interval(self.update, 1.0/33.0)
 
@@ -143,14 +163,30 @@ class CamScreen(MDScreen):
             # display image from the texture
             self.img1.texture = image_texture
 
-    def on_leave(self, *args):
+    def stop_camera(self, *args):
         # close the camera properly
         Clock.unschedule(self.update)
-        self.capture.release()
+        if self.capture:
+            self.capture.release()
 
 class MainApp(MDApp):
-    def build(self):     
-        self.theme_cls.primary_palette = "Green"   
+    def open_menu(self, item):
+        menu_items = [
+            {
+                "text": f"{i}",
+                "on_release": lambda x=f"{i}": self.menu_callback(item ,x),
+            } for i in ('0','1')
+        ]
+        self.menu = MDDropdownMenu(caller=item, items=menu_items, )
+        self.menu.open()
+
+    def menu_callback(self, caller, text_item):
+        
+        caller.text = text_item
+        self.root.get_screen('Camscreen').select_camera(text_item)
+        self.menu.dismiss()
+
+    def build(self):
         return Builder.load_string(KV)
 
 MainApp().run()
