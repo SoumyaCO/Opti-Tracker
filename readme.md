@@ -1,7 +1,12 @@
-# Computer Vision based focus assistant
+## Computer Vision based focus assistant
 
-![alt="first page"](./media/first.png)
-![alt="Start page"](./media/Start page.png)
+---
+*First page*
+
+![First Page](media/first%20page.png)
+---
+*Start Page*
+![Start Page](media/Start%20page.png)
 
 ### Plan
 
