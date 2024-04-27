@@ -6,3 +6,4 @@ mediapipe_experiments/mediapipe_face_body_info.py
 mediapipe_experiments/.ipynb_checkpoints/experiment_-checkpoint.ipynb
 mediapipe_experiments/.ipynb_checkpoints/experiment_-checkpoint.ipynb
 mediapipe_experiments/face_landmarks.py
+test.py
