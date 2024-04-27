@@ -1,4 +1,4 @@
-# Copied Code from guidelines (START) ---------------------------------------
+# Importing libraries
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import numpy as np
@@ -7,10 +7,8 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import cv2
 
-# GLOBAL LANDMARKS
-GLOBAL_FACE_LANDMARKS = landmark_pb2.NormalizedLandmarkList()
 
-
+# Function to create the detection landmarks on the image .
 def draw_landmarks_on_image(rgb_image, detection_result):
     face_landmarks_list = detection_result.face_landmarks
     annotated_image = np.copy(rgb_image)
@@ -62,39 +60,12 @@ def eye_distance(detection_result):
     print(f"EYE DISTANCE===========\n{distance}")
 
 
-# def preprocess_landmarks(detection_result):
-#     face_landmarks_list = detection_result.face_landmarks
-
-#     # Loop through the detected faces to visualize.
-#     for idx in range(len(face_landmarks_list)):
-#         face_landmarks = face_landmarks_list[idx]
-
-#         # Draw the face landmarks.
-#         face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-#         face_landmarks_proto.landmark.extend(
-#             [
-#                 landmark_pb2.NormalizedLandmark(
-#                     x=landmark.x, y=landmark.y, z=landmark.z
-#                 )
-#                 for landmark in face_landmarks
-#             ]
-#         )
-#         print(len(face_landmarks_proto))
-#         print(face_landmarks_proto[2])
-
-#         GLOBAL_FACE_LANDMARKS = face_landmarks_proto
-
-
-# Copied Code from guidelines (END) -----------------------------------------------
-
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker
 FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
 FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-
-# STEP 2: Create an FaceLandmarker object.
 base_options = python.BaseOptions(model_asset_path="../models/face_landmarker.task")
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
@@ -104,24 +75,22 @@ options = vision.FaceLandmarkerOptions(
 )
 detector = vision.FaceLandmarker.create_from_options(options)
 
-# STEP 3: Capture Camera
+# Video capture via webcam (mine is 1, select according to your system , and camera)
 cap = cv2.VideoCapture(1)
 
 while cap.isOpened():
     ret, frame = cap.read()
-    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
 
-    # STEP 4: Detect face landmarks from the input image.
     detection_result = detector.detect(image)
-    # preprocess_landmarks(detection_result)
     try:
         eye_distance(detection_result)
     except:
         print("NOT STARTED")
-    # STEP 5: Process the detection result. In this case, visualize it.
+
+    # Annotate the image to show the tracking marks
     annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
-    cv2.imshow("iris detection", cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
+    cv2.imshow("iris detection", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
