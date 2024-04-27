@@ -6,7 +6,7 @@ import cv2
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
-from kivy.uix.spinner import Spinner
+
 
 KV = '''
 ScreenManager:
@@ -80,10 +80,10 @@ ScreenManager:
             Image:
                 source: 'optitrackers.png'
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: 0.5, 0.5
+                size_hint: 1, 1
         
             MDDropDownItem:
-                pos_hint: {'center_x': 0.3, 'center_y': 0.5}
+                pos_hint: {'center_x': 0.5, 'center_y': 0.7}
                 padding: "-10dp"
                 id: dropdown_item
                 text: 'Select Camera'
@@ -106,21 +106,21 @@ ScreenManager:
         Image:
             id: cam_image
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            size_hint: 2,2
+            size_hint: 1,1
         BoxLayout:
             size_hint_y: None
             height: "48dp"
             spacing: '120dp'
             padding: "30dp"
-            pos_hint: {'center_x': 0.8, 'center_y': 0.5}
+            pos_hint: {'center_x': 0.9, 'center_y': 1}
             
                 
-            MDButton:
-                style: "elevated"
+            # MDButton:
+            #     style: "elevated"
                
-                on_release: root.start_camera()
-                MDButtonText:
-                    text: "Start"
+            #     on_release: root.start_camera()
+            #     MDButtonText:
+            #         text: "Start"
             MDButton:
                 style: "elevated"
 
@@ -162,12 +162,19 @@ class CamScreen(MDScreen):
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             # display image from the texture
             self.img1.texture = image_texture
+        # def start_camera(self, *args):
+        # # Resume the camera 
+        #     if self.capture:
+        #         self.capture.play = True  # Start the camera
+
 
     def stop_camera(self, *args):
         # close the camera properly
         Clock.unschedule(self.update)
         if self.capture:
-            self.capture.release()
+                 self.capture.release()# Stop the camera
+                 self.manager.current = 'startscreen'
+
 
 class MainApp(MDApp):
     def open_menu(self, item):
