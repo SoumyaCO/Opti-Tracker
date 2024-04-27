@@ -39,12 +39,17 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
-def left_eye_blink(detection_results):
-    print(type(detection_result))
-    id1 = detection_result.face_landmarks[0][386].y
-    id2 = detection_result.face_landmarks[0][374].y
-    print(id1, id2)
-    print(f"DISTANCE==========================\n{abs(id1 - id2)}")
+def left_eye_blink(detection_results, frame_height, frame_width):
+    left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
+    left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
+    print(
+        "left_eye_up_y: {}\n left_eye_down_y {}".format(left_eye_up_y, left_eye_down_y)
+    )
+    distance = abs(left_eye_up_y - left_eye_down_y)
+    print(f"DISTANCE==========================\n{distance}")
+
+    if distance <= 10:
+        print("CLOSED")
 
 
 def eye_distance(detection_result):
@@ -82,11 +87,13 @@ while cap.isOpened():
     ret, frame = cap.read()
     image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
 
+    frame_height, frame_width, _ = frame.shape
+    print("frame height {}\nframe width {}".format(frame_height, frame_width))
     detection_result = detector.detect(image)
     try:
-        eye_distance(detection_result)
+        left_eye_blink(detection_result, frame_height, frame_width)
     except:
-        print("NOT STARTED")
+        print("CAN NOT FIND IT")
 
     # Annotate the image to show the tracking marks
     annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
