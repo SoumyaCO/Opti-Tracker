@@ -6,6 +6,18 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import cv2
+from pydub import AudioSegment
+from pydub.playback import play
+
+
+# Sound files
+audio_for_distracted = AudioSegment.from_ogg("./Audio/Distracted.ogg")
+audio_for_sleepy = AudioSegment.from_ogg("./Audio/Sleepy.ogg")
+audio_for_posture = AudioSegment.from_ogg("./Audio/Posture.ogg")
+
+# GLOBAL FLAGS
+EYE = "open"
+HEAD = "front"
 
 
 # Function to create the detection landmarks on the image .
@@ -39,30 +51,55 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
+def eye_lid_face_ratio(detection_results, frame_height, frame_width):
+    face_top_x = detection_results.face_landmarks[0][10].x * frame_width
+    face_top_y = detection_results.face_landmarks[0][10].y * frame_height
+
+    face_bottom_x = detection_results.face_landmarks[0][152].x * frame_width
+    face_bottom_y = detection_results.face_landmarks[0][152].y * frame_height
+
+    face_distance = np.sqrt(
+        (face_top_x - face_bottom_x) ** 2 + (face_top_y - face_bottom_y) ** 2
+    )
+
+    left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
+    left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
+    eye_distance = abs(left_eye_up_y - left_eye_down_y)
+
+    ratio = eye_distance / face_distance
+    print(
+        f"---------------------------------------\n ---------RATIO: {ratio}-------- \n------------------------------"
+    )
+
+
 def left_eye_blink(detection_results, frame_height, frame_width):
     left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
     left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
-    print(
-        "left_eye_up_y: {}\n left_eye_down_y {}".format(left_eye_up_y, left_eye_down_y)
-    )
     distance = abs(left_eye_up_y - left_eye_down_y)
-    print(f"DISTANCE==========================\n{distance}")
+    print(f"---------up-down-eye-distance ------{distance}--------------")
 
     if distance <= 10:
-        print("CLOSED")
+        EYE = "closed"
+    else:
+        EYE = "open"
+    print(f"-------------{EYE}----------------")
 
 
-def eye_distance(detection_result):
-    left_eye_x = detection_result.face_landmarks[0][468].x
-    right_eye_x = detection_result.face_landmarks[0][473].x
+def eye_distance(detection_result, frame_height, frame_width):
+    left_eye_x = detection_result.face_landmarks[0][468].x * frame_width
+    right_eye_x = detection_result.face_landmarks[0][473].x * frame_width
 
-    left_eye_y = detection_result.face_landmarks[0][468].y
-    right_eye_y = detection_result.face_landmarks[0][473].y
+    left_eye_y = detection_result.face_landmarks[0][468].y * frame_height
+    right_eye_y = detection_result.face_landmarks[0][473].y * frame_height
 
     distance = np.sqrt(
         (left_eye_x - right_eye_x) ** 2 + (right_eye_y - left_eye_y) ** 2
     )
-    print(f"EYE DISTANCE===========\n{distance}")
+    if distance <= 90:
+        HEAD = "not-front"
+    else:
+        HEAD = "front"
+    print(f"--------------{HEAD}---{distance}--------------")
 
 
 BaseOptions = mp.tasks.BaseOptions
@@ -82,16 +119,19 @@ detector = vision.FaceLandmarker.create_from_options(options)
 
 # Video capture via webcam (mine is 1, select according to your system , and camera)
 cap = cv2.VideoCapture(1)
-
+cap.set(cv2.CAP_PROP_FPS, 1)
 while cap.isOpened():
     ret, frame = cap.read()
     image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
 
     frame_height, frame_width, _ = frame.shape
-    print("frame height {}\nframe width {}".format(frame_height, frame_width))
     detection_result = detector.detect(image)
     try:
         left_eye_blink(detection_result, frame_height, frame_width)
+        eye_distance(detection_result, frame_height, frame_width)
+
+        # testing face top and bottom distance and eyea lid top and bottom ratio
+        eye_lid_face_ratio(detection_result, frame_height, frame_width)
     except:
         print("CAN NOT FIND IT")
 
