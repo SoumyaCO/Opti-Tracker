@@ -51,7 +51,7 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
-def eye_lid_face_ratio(detection_results, frame_height, frame_width):
+def calculate_ratio(detection_results, frame_height, frame_width, distance):
     face_top_x = detection_results.face_landmarks[0][10].x * frame_width
     face_top_y = detection_results.face_landmarks[0][10].y * frame_height
 
@@ -61,15 +61,7 @@ def eye_lid_face_ratio(detection_results, frame_height, frame_width):
     face_distance = np.sqrt(
         (face_top_x - face_bottom_x) ** 2 + (face_top_y - face_bottom_y) ** 2
     )
-
-    left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
-    left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
-    eye_distance = abs(left_eye_up_y - left_eye_down_y)
-
-    ratio = eye_distance / face_distance
-    print(
-        f"---------------------------------------\n ---------RATIO: {ratio}-------- \n------------------------------"
-    )
+    return round(distance / face_distance * 100, 2)
 
 
 def left_eye_blink(detection_results, frame_height, frame_width):
@@ -83,6 +75,7 @@ def left_eye_blink(detection_results, frame_height, frame_width):
     else:
         EYE = "open"
     print(f"-------------{EYE}----------------")
+    return distance
 
 
 def eye_distance(detection_result, frame_height, frame_width):
@@ -100,6 +93,7 @@ def eye_distance(detection_result, frame_height, frame_width):
     else:
         HEAD = "front"
     print(f"--------------{HEAD}---{distance}--------------")
+    return distance
 
 
 BaseOptions = mp.tasks.BaseOptions
@@ -127,11 +121,25 @@ while cap.isOpened():
     frame_height, frame_width, _ = frame.shape
     detection_result = detector.detect(image)
     try:
-        left_eye_blink(detection_result, frame_height, frame_width)
-        eye_distance(detection_result, frame_height, frame_width)
+        left_eye_lid_distance = left_eye_blink(
+            detection_result, frame_height, frame_width
+        )
+        distance_bw_eyes = eye_distance(detection_result, frame_height, frame_width)
 
-        # testing face top and bottom distance and eyea lid top and bottom ratio
-        eye_lid_face_ratio(detection_result, frame_height, frame_width)
+        # Calculate the ratio and print it .
+        ratio_eye_lid_distance = calculate_ratio(
+            detection_result, frame_height, frame_width, left_eye_lid_distance
+        )
+        ratio_bw_eyes = calculate_ratio(
+            detection_result, frame_height, frame_width, distance_bw_eyes
+        )
+        print(
+            f"{'-'* 80}\n {'>' * 30} EYE_LID_RATIO: {ratio_eye_lid_distance} {'<' * 30} \n {'-' * 80}"
+        )
+        print(
+            f"{'-'* 80}\n {'>' * 30} DISTANCE_BW_EYES: {ratio_bw_eyes} {'<' * 30} \n {'-' * 80}"
+        )
+
     except:
         print("CAN NOT FIND IT")
 
