@@ -8,7 +8,7 @@ from mediapipe.tasks.python import vision
 import cv2
 from pydub import AudioSegment
 from pydub.playback import play
-
+from threading import Thread
 
 # Sound files
 audio_for_distracted = AudioSegment.from_ogg("./Audio/Distracted.ogg")
@@ -18,6 +18,7 @@ audio_for_posture = AudioSegment.from_ogg("./Audio/Posture.ogg")
 # GLOBAL FLAGS
 EYE = "open"
 HEAD = "front"
+TIME_COUNTER = 0  # time in seconds
 
 
 # Function to create the detection landmarks on the image .
@@ -51,7 +52,19 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
+def play_audio(name):
+    """
+    plays the audio (preprocessed by pydub)
+    later: have to make it async.(or threading)
+    """
+    play(name)
+
+
 def calculate_ratio(detection_results, frame_height, frame_width, distance):
+    """
+    Calulates the ratio of a facial distance
+    with respect to the distance between forehead and chin.
+    """
     face_top_x = detection_results.face_landmarks[0][10].x * frame_width
     face_top_y = detection_results.face_landmarks[0][10].y * frame_height
 
@@ -64,7 +77,10 @@ def calculate_ratio(detection_results, frame_height, frame_width, distance):
     return round(distance / face_distance * 100, 2)
 
 
-def left_eye_blink(detection_results, frame_height, frame_width):
+def left_eye_blink(detection_result, frame_height, frame_width):
+    """
+    Calculate distance between the left eye upper eye-lid and lower eye-lid.
+    """
     left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
     left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
     distance = abs(left_eye_up_y - left_eye_down_y)
@@ -79,6 +95,10 @@ def left_eye_blink(detection_results, frame_height, frame_width):
 
 
 def eye_distance(detection_result, frame_height, frame_width):
+    """
+    Calculates the distance between two iris
+    -> (helps to indirtectly determine the head position of a person)
+    """
     left_eye_x = detection_result.face_landmarks[0][468].x * frame_width
     right_eye_x = detection_result.face_landmarks[0][473].x * frame_width
 
@@ -102,7 +122,8 @@ FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
 FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-base_options = python.BaseOptions(model_asset_path="../models/face_landmarker.task")
+base_options = python.BaseOptions(
+    model_asset_path="../models/face_landmarker.task")
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
     output_face_blendshapes=True,
@@ -111,7 +132,7 @@ options = vision.FaceLandmarkerOptions(
 )
 detector = vision.FaceLandmarker.create_from_options(options)
 
-# Video capture via webcam (mine is 1, select according to your system , and camera)
+# Video capture via webcam (mine is 1)
 cap = cv2.VideoCapture(1)
 cap.set(cv2.CAP_PROP_FPS, 1)
 while cap.isOpened():
@@ -124,7 +145,8 @@ while cap.isOpened():
         left_eye_lid_distance = left_eye_blink(
             detection_result, frame_height, frame_width
         )
-        distance_bw_eyes = eye_distance(detection_result, frame_height, frame_width)
+        distance_bw_eyes = eye_distance(
+            detection_result, frame_height, frame_width)
 
         # Calculate the ratio and print it .
         ratio_eye_lid_distance = calculate_ratio(
@@ -133,19 +155,30 @@ while cap.isOpened():
         ratio_bw_eyes = calculate_ratio(
             detection_result, frame_height, frame_width, distance_bw_eyes
         )
-        print(
-            f"{'-'* 80}\n {'>' * 30} EYE_LID_RATIO: {ratio_eye_lid_distance} {'<' * 30} \n {'-' * 80}"
-        )
-        print(
-            f"{'-'* 80}\n {'>' * 30} DISTANCE_BW_EYES: {ratio_bw_eyes} {'<' * 30} \n {'-' * 80}"
-        )
 
-    except:
-        print("CAN NOT FIND IT")
+        # Creating the thread -------------------------------------------
+        # audio_thread = Thread(target=play_audio, args=(audio_for_posture))
+        if ratio_bw_eyes < 35:
+            TIME_COUNTER += 1 / 15
+        else:
+            TIME_COUNTER = 0
 
+        if TIME_COUNTER >= 10:
+            play(audio_for_distracted)
+            TIME_COUNTER = 0
+
+        print("TIME COUNTER ========================={}".format(TIME_COUNTER))
+        print("=== EYE_LID_DISTANCE: {}".format(ratio_eye_lid_distance))
+        print("====DISTANCE_BW_EYES: {}".format(ratio_bw_eyes))
+
+    except Exception as e:
+        print("exception occured")
+        print(e)
     # Annotate the image to show the tracking marks
-    annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
-    cv2.imshow("iris detection", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+    annotated_image = draw_landmarks_on_image(
+        image.numpy_view(), detection_result)
+    cv2.imshow("iris detection", cv2.cvtColor(
+        annotated_image, cv2.COLOR_RGB2BGR))
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
