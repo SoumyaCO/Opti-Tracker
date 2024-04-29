@@ -86,11 +86,11 @@ ScreenManager:
                 pos_hint: {'center_x': 0.5, 'center_y': 0.7}
                 padding: "-10dp"
                 id: dropdown_item
-                
+                text: 'Select Camera'
                 on_release: app.open_menu(self)
                 MDDropDownItemText:
                     id: drop_text
-                    text: "Cam"
+                    text: "Select Cam"
             MDButton:
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 # padding: [0, 50, 0, 0] 
@@ -109,18 +109,11 @@ ScreenManager:
             size_hint: 1,1
         BoxLayout:
             size_hint_y: None
-            height: "48dp"
+            height: "58dp"
             spacing: '120dp'
             padding: "30dp"
             pos_hint: {'center_x': 0.9, 'center_y': 1}
-            
-                
-            # MDButton:
-            #     style: "elevated"
-               
-            #     on_release: root.start_camera()
-            #     MDButtonText:
-            #         text: "Start"
+           
             MDButton:
                 style: "elevated"
 
@@ -129,7 +122,7 @@ ScreenManager:
                     text: "Stop"
                 
 '''
-selected_camera = 0 
+
 class LogoScreen(MDScreen):
     pass
 
@@ -139,20 +132,16 @@ class StartScreen(MDScreen):
 class CamScreen(MDScreen):
     def __init__(self, **kwargs):
         super(CamScreen, self).__init__(**kwargs)
-        global selected_camera
-        self.capture = cv2.VideoCapture(selected_camera)
+        self.capture = None
 
     def select_camera(self, value):
-        global selected_camera  # Access the global variable
-        selected_camera = int(value)  # Store the selected camera number
         if self.capture:
             self.capture.release()
-        self.capture = cv2.VideoCapture(selected_camera)
+        self.capture = cv2.VideoCapture(int(value))
 
     def start_camera(self, *args):
-        global selected_camera  # Access the global variable
         if not self.capture:
-            self.capture = cv2.VideoCapture(selected_camera)  # Use the selected camera number
+            return
         self.img1 = self.ids['cam_image']
         Clock.schedule_interval(self.update, 1.0/33.0)
 
@@ -161,15 +150,12 @@ class CamScreen(MDScreen):
         if ret:
             # convert it to texture
             buf1 = cv2.flip(frame, 0)
-            buf = buf1.tobytes()
+            buf = buf1.tostring()
             image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             # display image from the texture
             self.img1.texture = image_texture
-        # def start_camera(self, *args):
-        # # Resume the camera 
-        #     if self.capture:
-        #         self.capture.play = True  # Start the camera
+       
 
 
     def stop_camera(self, *args):
@@ -192,8 +178,8 @@ class MainApp(MDApp):
         self.menu.open()
 
     def menu_callback(self, caller, text_item):
+        
         caller.text = text_item
-        # self.root.ids.drop_text.text = text_item
         self.root.get_screen('Camscreen').select_camera(text_item)
         self.menu.dismiss()
 
