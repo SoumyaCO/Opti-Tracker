@@ -86,7 +86,7 @@ ScreenManager:
                 pos_hint: {'center_x': 0.5, 'center_y': 0.7}
                 padding: "-10dp"
                 id: dropdown_item
-                text: 'Select Camera'
+                
                 on_release: app.open_menu(self)
                 MDDropDownItemText:
                     id: drop_text
@@ -129,7 +129,7 @@ ScreenManager:
                     text: "Stop"
                 
 '''
-
+selected_camera = 0 
 class LogoScreen(MDScreen):
     pass
 
@@ -139,16 +139,20 @@ class StartScreen(MDScreen):
 class CamScreen(MDScreen):
     def __init__(self, **kwargs):
         super(CamScreen, self).__init__(**kwargs)
-        self.capture = cv2.VideoCapture(0)
+        global selected_camera
+        self.capture = cv2.VideoCapture(selected_camera)
 
     def select_camera(self, value):
+        global selected_camera  # Access the global variable
+        selected_camera = int(value)  # Store the selected camera number
         if self.capture:
             self.capture.release()
-        self.capture = cv2.VideoCapture(int(value))
+        self.capture = cv2.VideoCapture(selected_camera)
 
     def start_camera(self, *args):
+        global selected_camera  # Access the global variable
         if not self.capture:
-            return
+            self.capture = cv2.VideoCapture(selected_camera)  # Use the selected camera number
         self.img1 = self.ids['cam_image']
         Clock.schedule_interval(self.update, 1.0/33.0)
 
@@ -157,7 +161,7 @@ class CamScreen(MDScreen):
         if ret:
             # convert it to texture
             buf1 = cv2.flip(frame, 0)
-            buf = buf1.tostring()
+            buf = buf1.tobytes()
             image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             # display image from the texture
@@ -188,8 +192,8 @@ class MainApp(MDApp):
         self.menu.open()
 
     def menu_callback(self, caller, text_item):
-        
         caller.text = text_item
+        # self.root.ids.drop_text.text = text_item
         self.root.get_screen('Camscreen').select_camera(text_item)
         self.menu.dismiss()
 
