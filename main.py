@@ -8,7 +8,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
 
 
-KV = '''
+KV = """
 ScreenManager:
     id: screen_manager
     LogoScreen:
@@ -122,26 +122,31 @@ ScreenManager:
                     text: "Stop"
                 
 '''
-
+selected_camera = 0 
 class LogoScreen(MDScreen):
     pass
+
 
 class StartScreen(MDScreen):
     pass
 
+
 class CamScreen(MDScreen):
     def __init__(self, **kwargs):
         super(CamScreen, self).__init__(**kwargs)
-        self.capture = None
+        global selected_camera
+        self.capture = cv2.VideoCapture(selected_camera)
 
     def select_camera(self, value):
+        global selected_camera  # Access the global variable
+        selected_camera = int(value)  # Store the selected camera number
         if self.capture:
             self.capture.release()
-        self.capture = cv2.VideoCapture(int(value))
+        self.capture = cv2.VideoCapture(selected_camera)
 
     def start_camera(self, *args):
         if not self.capture:
-            return
+            self.capture = cv2.VideoCapture(selected_camera)  # Use the selected camera number
         self.img1 = self.ids['cam_image']
         Clock.schedule_interval(self.update, 1.0/33.0)
 
@@ -150,40 +155,49 @@ class CamScreen(MDScreen):
         if ret:
             # convert it to texture
             buf1 = cv2.flip(frame, 0)
-            buf = buf1.tostring()
+            buf = buf1.tobytes()
             image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             # display image from the texture
             self.img1.texture = image_texture
-       
-
+        # def start_camera(self, *args):
+        # # Resume the camera 
+        #     if self.capture:
+        #         self.capture.play = True  # Start the camera
 
     def stop_camera(self, *args):
         # close the camera properly
         Clock.unschedule(self.update)
         if self.capture:
-                 self.capture.release()# Stop the camera
-                 self.manager.current = 'startscreen'
+            self.capture.release()  # Stop the camera
+            self.manager.current = "startscreen"
 
 
 class MainApp(MDApp):
     def open_menu(self, item):
         menu_items = [
             {
-                "text": f"{i}",
-                "on_release": lambda x=f"{i}": self.menu_callback(item ,x),
-            } for i in ('0','1')
+                "text": i,
+                "on_release": lambda x=i: self.menu_callback(item, x),
+            }
+            for i in ("0", "1")
         ]
-        self.menu = MDDropdownMenu(caller=item, items=menu_items, )
+
+        self.menu = MDDropdownMenu(
+            caller=item,
+            items=menu_items,
+        )
         self.menu.open()
 
     def menu_callback(self, caller, text_item):
         
         caller.text = text_item
+        # self.root.ids.drop_text.text = text_item
         self.root.get_screen('Camscreen').select_camera(text_item)
         self.menu.dismiss()
 
     def build(self):
         return Builder.load_string(KV)
+
 
 MainApp().run()
