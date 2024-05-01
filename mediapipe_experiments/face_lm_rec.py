@@ -1,4 +1,3 @@
-# Copied Code from guidelines (START) ---------------------------------------
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import numpy as np
@@ -51,9 +50,6 @@ def draw_landmarks_on_image(rgb_image, detection_result):
 
     return annotated_image
 
-
-# Copied Code from guidelines (END) -----------------------------------------------
-
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker
 FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
@@ -67,8 +63,6 @@ def print_result(
 ):
     print("face landmarker result: {}".format(result))
 
-
-# STEP 2: Create an FaceLandmarker object.
 base_options = python.BaseOptions(model_asset_path="../models/face_landmarker.task")
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
@@ -78,7 +72,6 @@ options = vision.FaceLandmarkerOptions(
 )
 detector = vision.FaceLandmarker.create_from_options(options)
 
-# STEP 3: Capture Camera
 cap = cv2.VideoCapture(1)
 
 while True:
