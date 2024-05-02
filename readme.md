@@ -8,12 +8,15 @@
 *Start Page*
 ![Start Page](media/Start%20page.png)
 
-### Plan
-
-Have the 2 facial points only (the pupil and the eye map(boundary))
-
-During calibration store the distances between the eye boundaries and the pupil landmark, and give some relaxation (and apply conditional statements)
-
-### Temporary Problems:
-
-Facial landmark itself is an object (How to print it?)
+App features:
+1. Capturing the eye and estimating the position of the iris.
+2. Trigger a customizable sound when 
+    1. Distacted from screen
+    2. Feeling tired
+    3. bad posture.
+3. keep track of your -
+    1. attention level (time)
+    2. posture
+    2. Sleep, health
+4. Web interface for tracking previous data. (optional)
+5. Tips on how to improve attention, posture, etc --> chatgpt like chat.(comming soon) 
