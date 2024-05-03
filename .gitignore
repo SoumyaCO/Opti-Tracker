@@ -9,3 +9,5 @@ mediapipe_experiments/.ipynb_checkpoints/experiment_-checkpoint.ipynb
 test.py
 mediapipe_experiments/face_lm_audio.py
 mediapipe_experiments/face_lm_audio.py
+mediapipe_experiments/__pycache__
+__pycache__

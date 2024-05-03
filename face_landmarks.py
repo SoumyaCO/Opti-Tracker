@@ -121,7 +121,7 @@ FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
 
 base_options = python.BaseOptions(
-    model_asset_path="../models/face_landmarker.task")
+    model_asset_path="models/face_landmarker.task")
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
     output_face_blendshapes=True,

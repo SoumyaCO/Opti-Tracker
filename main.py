@@ -6,6 +6,7 @@ import cv2
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
+from face_landmarks import *
 
 
 KV = """
@@ -120,8 +121,7 @@ ScreenManager:
                 on_release: root.stop_camera()
                 MDButtonText:
                     text: "Stop"
-                
-'''
+"""                
 selected_camera = 0 
 class LogoScreen(MDScreen):
     pass
@@ -153,6 +153,7 @@ class CamScreen(MDScreen):
     def update(self, dt):
         ret, frame = self.capture.read()
         if ret:
+            frame = camera_function(frame)
             # convert it to texture
             buf1 = cv2.flip(frame, 0)
             buf = buf1.tobytes()
