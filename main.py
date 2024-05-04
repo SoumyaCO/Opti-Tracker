@@ -8,7 +8,6 @@ from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
 from face_landmarks import *
 
-
 KV = """
 ScreenManager:
     id: screen_manager
@@ -130,10 +129,11 @@ class LogoScreen(MDScreen):
 class StartScreen(MDScreen):
     pass
 
-
 class CamScreen(MDScreen):
     def __init__(self, **kwargs):
         super(CamScreen, self).__init__(**kwargs)
+        self.TIME_COUNTER_SLEEP = 0
+        self.TIME_COUNTER_DIST = 0
         global selected_camera
         self.capture = cv2.VideoCapture(selected_camera)
 
@@ -149,11 +149,33 @@ class CamScreen(MDScreen):
             self.capture = cv2.VideoCapture(selected_camera)  # Use the selected camera number
         self.img1 = self.ids['cam_image']
         Clock.schedule_interval(self.update, 1.0/33.0)
-
+    # class variable (TIME COUNTER)
     def update(self, dt):
         ret, frame = self.capture.read()
         if ret:
-            frame = camera_function(frame)
+            distance_bw_eyes, distance_bw_lids, frame = camera_function(frame)
+            if distance_bw_eyes <= 38:
+                self.TIME_COUNTER_DIST += 1/15.0
+            elif distance_bw_lids < 4:
+                self.TIME_COUNTER_SLEEP += 1/15.0
+            else:
+                self.TIME_COUNTER_DIST = 0
+                self.TIME_COUNTER_SLEEP = 0
+
+            if self.TIME_COUNTER_DIST>= 8:
+                play_audio(audio_for_distracted)
+                self.TIME_COUNTER_DIST = 0
+            elif self.TIME_COUNTER_SLEEP >= 8:
+                play_audio(audio_for_sleepy)
+                self.TIME_COUNTER_SLEEP = 0
+            cv2.putText(frame, f"Sleepyness Duration: {round(self.TIME_COUNTER_SLEEP, 1)}", (100, 100),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, f"Non-attentive Duration: {round(self.TIME_COUNTER_DIST, 1)}", (100, 150),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+
+            print("EYE DISTANCE===========================>{}".format(distance_bw_eyes)) 
+            print("lid DISTANCE===========================>{}".format(distance_bw_lids))
+            print("====================\n===================\n==================\n{}".format(self.TIME_COUNTER_DIST))
+            print("====================\n===================\n==================\n{}".format(self.TIME_COUNTER_SLEEP))
+
             # convert it to texture
             buf1 = cv2.flip(frame, 0)
             buf = buf1.tobytes()

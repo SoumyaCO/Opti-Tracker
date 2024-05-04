@@ -5,7 +5,6 @@ import numpy as np
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import cv2
 from pydub import AudioSegment
 from pydub.playback import play
 
@@ -18,6 +17,10 @@ audio_for_posture = AudioSegment.from_ogg("./Audio/Posture.ogg")
 EYE = "open"
 HEAD = "front"
 TIME_COUNTER = 0  # time in seconds
+
+# Testing for the local variable condition  ---------------------------------
+print(f"Time counter from 'face_landmarks.py' file: {TIME_COUNTER}")
+# ---------------------------------------------------------
 
 
 # Function to create the detection landmarks on the image .
@@ -83,13 +86,6 @@ def left_eye_blink(detection_result, frame_height, frame_width):
     left_eye_up_y = detection_result.face_landmarks[0][386].y * frame_height
     left_eye_down_y = detection_result.face_landmarks[0][374].y * frame_height
     distance = abs(left_eye_up_y - left_eye_down_y)
-    print(f"---------up-down-eye-distance ------{distance}--------------")
-
-    if distance <= 10:
-        EYE = "closed"
-    else:
-        EYE = "open"
-    print(f"-------------{EYE}----------------")
     return distance
 
 
@@ -107,11 +103,6 @@ def eye_distance(detection_result, frame_height, frame_width):
     distance = np.sqrt(
         (left_eye_x - right_eye_x) ** 2 + (right_eye_y - left_eye_y) ** 2
     )
-    if distance <= 90:
-        HEAD = "not-front"
-    else:
-        HEAD = "front"
-    print(f"--------------{HEAD}---{distance}--------------")
     return distance
 
 BaseOptions = mp.tasks.BaseOptions
@@ -135,6 +126,8 @@ def camera_function(frame):
     image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
     frame_height, frame_width, _ = frame.shape
     detection_result = detector.detect(image)
+    ratio_eye_lid_distance = 100
+    ratio_bw_eyes = 100
     try:
         left_eye_lid_distance = left_eye_blink(
             detection_result, frame_height, frame_width
@@ -150,23 +143,26 @@ def camera_function(frame):
             detection_result, frame_height, frame_width, distance_bw_eyes
         )
 
-        if ratio_bw_eyes < 35:
-            TIME_COUNTER += 1 / 15
-        else:
-            TIME_COUNTER = 0
+        # bareaking the scope of these ywo variables 
+        ratio_bw_eyes = ratio_bw_eyes
+        ratio_eye_lid_distance = ratio_eye_lid_distance
 
-        if TIME_COUNTER >= 10:
-            play(audio_for_distracted)
-            TIME_COUNTER = 0
+       # if ratio_bw_eyes < 35:
+       #     TIME_COUNTER += 1 / 15
+       # else:
+       #     TIME_COUNTER = 0
 
-        print("TIME COUNTER ========================={}".format(TIME_COUNTER))
-        print("=== EYE_LID_DISTANCE: {}".format(ratio_eye_lid_distance))
-        print("====DISTANCE_BW_EYES: {}".format(ratio_bw_eyes))
+       # if TIME_COUNTER >= 10:
+       #     play(audio_for_distracted)
+       #     TIME_COUNTER = 0
+
+        #print("=== EYE_LID_DISTANCE: {}".format(ratio_eye_lid_distance))
+        #print("====DISTANCE_BW_EYES: {}".format(ratio_bw_eyes))
 
     except Exception as e:
         print("exception occured")
         print(e)
         # Annotate the image to show the tracking marks
     annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
-    return annotated_image  
+    return ratio_bw_eyes, ratio_eye_lid_distance, annotated_image
 
