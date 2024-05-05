@@ -18,11 +18,6 @@ EYE = "open"
 HEAD = "front"
 TIME_COUNTER = 0  # time in seconds
 
-# Testing for the local variable condition  ---------------------------------
-print(f"Time counter from 'face_landmarks.py' file: {TIME_COUNTER}")
-# ---------------------------------------------------------
-
-
 # Function to create the detection landmarks on the image .
 def draw_landmarks_on_image(rgb_image, detection_result):
     face_landmarks_list = detection_result.face_landmarks
@@ -42,6 +37,20 @@ def draw_landmarks_on_image(rgb_image, detection_result):
                 for landmark in face_landmarks
             ]
         )
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_TESSELATION,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=mp.solutions.drawing_styles
+            .get_default_face_mesh_tesselation_style())
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_CONTOURS,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=mp.solutions.drawing_styles
+            .get_default_face_mesh_contours_style())
 
         solutions.drawing_utils.draw_landmarks(
             image=annotated_image,
