@@ -1,22 +1,6 @@
 ## Computer Vision based focus assistant
 
 ---
-*First page*
+### Video Demo
+[![Watch](https://github.com/SoumyaCO/mediapipe_project/assets/101652501/3913351b-3114-45c9-9a7d-cddb55435f4d)](https://youtu.be/WhsXiTHbgkQ?si=WR3RrG2dCLAvyq6b)
 
-![First Page](media/first%20page.png)
----
-*Start Page*
-![Start Page](media/Start%20page.png)
-
-App features:
-1. Capturing the eye and estimating the position of the iris.
-2. Trigger a customizable sound when 
-    1. Distacted from screen
-    2. Feeling tired
-    3. bad posture.
-3. keep track of your -
-    1. attention level (time)
-    2. posture
-    2. Sleep, health
-4. Web interface for tracking previous data. (optional)
-5. Tips on how to improve attention, posture, etc --> chatgpt like chat.(comming soon) 
