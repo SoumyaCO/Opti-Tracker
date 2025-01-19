@@ -1,159 +1,84 @@
-from kivy.lang import Builder
-from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.menu import MDDropdownMenu
+import sys
 import cv2
-from kivy.clock import Clock
-from kivy.graphics.texture import Texture
-from kivy.uix.image import Image
-from face_landmarks import *
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QComboBox, QSizePolicy, QHBoxLayout
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import QTimer, Qt
+from face_landmarks import *  # Assuming you have the face_landmarks.py
 
-KV = """
-ScreenManager:
-    id: screen_manager
-    LogoScreen:
-        name: 'logoscreen'
-        manager: screen_manager
-    StartScreen:
-        name: 'startscreen'
-        manager: screen_manager
-    CamScreen:
-        name: 'Camscreen'
-        manager: screen_manager
+class CameraWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Opti-Tracker")
+        self.setMinimumWidth(800)  # Set a minimum width
+        self.setMinimumHeight(600)  # Set a minimum height
 
-<LogoScreen>:
-    canvas.before:
-        Color:
-            rgba:0,0,0,1 
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    BoxLayout:
-        orientation: 'vertical'
-        padding: "160dp"
-        Image:
-            source: 'logo.png'
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            size_hint: 0.7, 0.7
-        MDButton:
-            style: "elevated"
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            on_release: root.manager.current = 'startscreen'
-            MDButtonIcon:
-                pos_hint: {'center_x': 0.6, 'center_y': 0.5}
-                icon: "arrow-right"
-            
-
-
-        
-<StartScreen>:
-   
-                
-    canvas.before:
-        # Color:
-        #     rgba:
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    BoxLayout:
-        
-        orientation: 'vertical'
-        MDTopAppBar:
-            MDTopAppBarLeadingButtonContainer:
-
-                MDActionTopAppBarButton:
-                    icon: "menu"
-                    
-            
-            MDTopAppBarTitle:
-                text: "OptiTracker"
-                pos_hint: {"center_x": .5}
-            MDTopAppBarTrailingButtonContainer:
-                MDActionTopAppBarButton:
-                    icon: "account-circle-outline"
-        BoxLayout:
-            orientation: 'vertical'
-           
-            
-            padding: "40dp"
-            
-            Image:
-                source: 'optitrackers.png'
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: 1, 1
-        
-            MDDropDownItem:
-                pos_hint: {'center_x': 0.5, 'center_y': 0.7}
-                padding: "-10dp"
-                id: dropdown_item
-                text: 'Select Camera'
-                on_release: app.open_menu(self)
-                MDDropDownItemText:
-                    id: drop_text
-                    text: "Select Cam"
-            MDButton:
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                # padding: [0, 50, 0, 0] 
-                on_release: 
-                    root.manager.current = 'Camscreen'
-                    root.manager.get_screen('Camscreen').start_camera()
-                MDButtonText:
-                    text: 'Get Started'
-
-<CamScreen>:
-    BoxLayout:
-        orientation: 'vertical'
-        Image:
-            id: cam_image
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            size_hint: 1,1
-        BoxLayout:
-            size_hint_y: None
-            height: "58dp"
-            spacing: '120dp'
-            padding: "30dp"
-            pos_hint: {'center_x': 0.9, 'center_y': 1}
-           
-            MDButton:
-                style: "elevated"
-
-                on_release: root.stop_camera()
-                MDButtonText:
-                    text: "Stop"
-"""                
-selected_camera = 0 
-class LogoScreen(MDScreen):
-    pass
-
-
-class StartScreen(MDScreen):
-    pass
-
-class CamScreen(MDScreen):
-    def __init__(self, **kwargs):
-        super(CamScreen, self).__init__(**kwargs)
+        self.capture = None
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_frame)
         self.TIME_COUNTER_SLEEP = 0
         self.TIME_COUNTER_DIST = 0
-        global selected_camera
-        self.capture = cv2.VideoCapture(selected_camera)
+        
+        self.init_ui()
 
-    def select_camera(self, value):
-        global selected_camera  # Access the global variable
-        selected_camera = int(value)  # Store the selected camera number
+    def init_ui(self):
+        # Central widget
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+
+        layout = QVBoxLayout()
+
+        # Camera selection dropdown
+        self.camera_dropdown = QComboBox(self)
+        self.camera_dropdown.addItem("Select Camera")
+        self.camera_dropdown.addItem("0")
+        self.camera_dropdown.addItem("1")
+        self.camera_dropdown.currentIndexChanged.connect(self.change_camera)
+        layout.addWidget(self.camera_dropdown)
+
+        # Button layout to center the buttons
+        button_layout = QHBoxLayout()
+        
+        # Start button
+        self.start_button = QPushButton("Start Camera", self)
+        self.start_button.setFixedSize(150, 40)  # Set fixed size for the button
+        self.start_button.clicked.connect(self.start_camera)
+        button_layout.addWidget(self.start_button)
+
+        # Stop button
+        self.stop_button = QPushButton("Stop Camera", self)
+        self.stop_button.setFixedSize(150, 40)  # Set fixed size for the button
+        self.stop_button.clicked.connect(self.stop_camera)
+        button_layout.addWidget(self.stop_button)
+
+        # Center the buttons within the layout
+        button_layout.setAlignment(Qt.AlignCenter)
+        layout.addLayout(button_layout)
+
+        # Image display label
+        self.image_label = QLabel(self)
+        self.image_label.setAlignment(Qt.AlignCenter)  # Make sure the image is centered
+        self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # Make it resizable
+        layout.addWidget(self.image_label)
+
+        central_widget.setLayout(layout)
+
+    def start_camera(self):
+        selected_camera = int(self.camera_dropdown.currentText()) if self.camera_dropdown.currentText() != "Select Camera" else 0
+        self.capture = cv2.VideoCapture(selected_camera)
+        if self.capture.isOpened():
+            self.timer.start(33)  # Update every 33ms (30fps)
+
+    def stop_camera(self):
         if self.capture:
             self.capture.release()
-        self.capture = cv2.VideoCapture(selected_camera)
+        self.timer.stop()
 
-    def start_camera(self, *args):
-        if not self.capture:
-            self.capture = cv2.VideoCapture(selected_camera)  # Use the selected camera number
-        self.img1 = self.ids['cam_image']
-        Clock.schedule_interval(self.update, 1.0/33.0)
-    # class variable (TIME COUNTER)
-    def update(self, dt):
+    def update_frame(self):
         ret, frame = self.capture.read()
         if ret:
+            # Process frame
             distance_bw_eyes, distance_bw_lids, frame = camera_function(frame)
+
             if distance_bw_eyes <= 38:
                 self.TIME_COUNTER_DIST += 1/15.0
             elif distance_bw_lids < 4:
@@ -170,57 +95,39 @@ class CamScreen(MDScreen):
                 self.TIME_COUNTER_SLEEP = 0
             cv2.putText(frame, f"Sleepyness Duration: {round(self.TIME_COUNTER_SLEEP, 1)}", (100, 100),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
             cv2.putText(frame, f"Non-attentive Duration: {round(self.TIME_COUNTER_DIST, 1)}", (100, 150),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+            
+            # Resize the frame to fit the window
+            window_width = self.width()
+            window_height = self.height()
 
-            print("EYE DISTANCE===========================>{}".format(distance_bw_eyes)) 
-            print("lid DISTANCE===========================>{}".format(distance_bw_lids))
-            print("====================\n===================\n==================\n{}".format(self.TIME_COUNTER_DIST))
-            print("====================\n===================\n==================\n{}".format(self.TIME_COUNTER_SLEEP))
+            aspect_ratio = frame.shape[1] / frame.shape[0]
 
-            # convert it to texture
-            buf1 = cv2.flip(frame, 0)
-            buf = buf1.tobytes()
-            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-            image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-            # display image from the texture
-            self.img1.texture = image_texture
-        # def start_camera(self, *args):
-        # # Resume the camera 
-        #     if self.capture:
-        #         self.capture.play = True  # Start the camera
+            # Resize the frame to fit within the window
+            new_width = window_width
+            new_height = int(new_width / aspect_ratio)
 
-    def stop_camera(self, *args):
-        # close the camera properly
-        Clock.unschedule(self.update)
+            if new_height > window_height:
+                new_height = window_height
+                new_width = int(new_height * aspect_ratio)
+
+            resized_frame = cv2.resize(frame, (new_width, new_height))
+
+            # Convert frame to QImage format
+            resized_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+            height, width, channel = resized_frame.shape
+            bytes_per_line = 3 * width
+            q_img = QImage(resized_frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap(q_img)
+            self.image_label.setPixmap(pixmap)
+
+    def change_camera(self):
         if self.capture:
-            self.capture.release()  # Stop the camera
-            self.manager.current = "startscreen"
+            self.capture.release()
+        self.start_camera()
 
-
-class MainApp(MDApp):
-    def open_menu(self, item):
-        menu_items = [
-            {
-                "text": i,
-                "on_release": lambda x=i: self.menu_callback(item, x),
-            }
-            for i in ("0", "1")
-        ]
-
-        self.menu = MDDropdownMenu(
-            caller=item,
-            items=menu_items,
-        )
-        self.menu.open()
-
-    def menu_callback(self, caller, text_item):
-        
-        caller.text = text_item
-        # self.root.ids.drop_text.text = text_item
-        self.root.get_screen('Camscreen').select_camera(text_item)
-        self.menu.dismiss()
-
-    def build(self):
-        return Builder.load_string(KV)
-
-
-MainApp().run()
+# Run the application
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = CameraWindow()
+    window.show()
+    sys.exit(app.exec_())
