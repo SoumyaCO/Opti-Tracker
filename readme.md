@@ -13,7 +13,7 @@
 ## 🚀 Features
 - 🎭 **Real-time Facial Landmark Tracking**: Uses **MediaPipe** to detect and analyze face movement.
 - 🔊 **Audio Feedback Alerts**: Notifies users if they are **distracted, sleepy, or have poor posture**.
-- 🖥️ **Kivy-based UI**: Provides an interactive interface for tracking and feedback visualization.
+- 🖥️ **PyQt-based UI**: Provides an interactive interface for tracking and feedback visualization.
 - 📂 **Modular Architecture**: Components are structured separately for better code organization.
 
 ---
@@ -25,7 +25,6 @@ opti-tracker/
 ├── README.md                   # Project documentation
 ├── face_landmarks.py            # Facial landmark detection script
 ├── icons.py                     # Handles icon resources
-├── kivy_image.py                # Kivy-based UI for displaying images
 ├── main.py                      # Main entry point for the application
 ├── requirements.txt              # List of dependencies
 │
@@ -70,10 +69,11 @@ pip install -r requirements.txt
 
 The project relies on the following key libraries:
 
-* Kivy – For GUI development.
-* MediaPipe – For real-time facial landmark detection.
-* Pygame – For playing audio feedback.
-* Additional dependencies listed in requirements.txt.
+* **PyQt5** – For GUI development.
+* **OpenCV** - For Video Capture and processing.
+* **MediaPipe** – For real-time facial landmark detection.
+* **PyDub** – For playing audio feedback.
+* **Additional** dependencies listed in `requirements.txt`.
 
 # 🚀 Usage
 
